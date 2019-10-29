@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sims</title>
+	<script type="text/javascript" src="classlib.js"></script>
+	<script type="text/javascript" src="eventlog.js"></script>
+	<!--<script type="text/javascript" src="TinyQueue.js"></script>-->
+	<script src="https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<style>
+		input.number {
+			width: 100px;
+		}
+	</style>
+</head>
+<body>
+	<div>
+		<input class="number" type="number" id="spellpower" placeholder="spellpower">
+		<input class="number" type="number" id="atkpower" placeholder="atkpower">
+		<input class="number" type="number" id="crit" placeholder="crit">
+		<input class="number" type="number" id="haste" placeholder="haste">
+		<input class="number" type="number" id="vers" placeholder="vers">
+		<input type="text" id="class_str" placeholder="class_str">
+		<input class="number" type="number" id="gcd" placeholder="gcd">
+		<input class="number" type="number" id="maxResource" placeholder="maxResource">
+		<input type="text" id="talent" placeholder="talent">
+	</div>
+	<input type="text" id="timelim">
+	<button onclick="RUN_SIM()">RUN</button>
+	<br>
+	<p id="dps">DPS: </p>
+	<span>Sample:&nbsp;</span><input type="text" id="namefilter" placeholder="Filter by name">
+	<button id="filter" onclick="FILTER()">FILTER</button>
+	<br>
+	<textarea id="log" style="width:500px; height:300px"></textarea>
+	<script type="text/javascript">
+		let log;
+		$(function() {
+			log = new EventLog();
+		});
+		$('#namefilter').on('keydown', e => {
+	    if (e.which == 13) {
+	        e.preventDefault();
+					FILTER();
+	    }
+		});
+		$('#timelim').on('keydown', e => {
+	    if (e.which == 13) {
+	        e.preventDefault();
+					RUN_SIM();
+	    }
+		});
+		const defaultInput = [185, 0, 0.1035, 0.1013, 0.1056, "DRUID$BALANCE", 1.5, 100, "NATURES_BALANCE"], fields = ["spellpower", "atkpower", "crit", "haste", "vers", "class_str", "gcd", "maxResource", "talent"];
+		for (let i = 0; i < defaultInput.length; i++) {
+			$("#" + fields[i]).val(defaultInput[i]);
+		}
+		function RUN_SIM() {
+			log.clear();
+			let me = new Player(Number($("#spellpower").val()), Number($("#atkpower").val()), Number($("#crit").val()), Number($("#haste").val()), Number($("#vers").val()), null, null,
+			 $("#class_str").val(), Number($("#gcd").val()), Number($("#maxResource").val()), $("#talent").val());
+			let dps = 0;
+			dps += new sim(me).run($("#timelim").val(), log);
+			for (let i = 0; i < 1000; i++) {
+				dps += new sim(me).run($('#timelim').val(), null);
+			}
+			$("#dps").html("DPS: " + (dps / 1001).toFixed(2));
+			// $("#dps").html("DPS: " + new sim(me).run($("#timelim").val(), log).toFixed(2));
+			$("#log").val(filterName(log.getEvents(), "").join("\n"));
+		}
+		function FILTER() {
+			$("#log").val(filterName(log.getEvents(), $("#namefilter").val().toUpperCase()).join("\n"));
+		}
+	</script>
+</body>
+</html>
