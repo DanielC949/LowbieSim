@@ -2,16 +2,13 @@
 <html>
 <head>
 	<title>Sims</title>
-	<script type="text/javascript" src="classlib.js"></script>
+	<script type="text/javascript" src="lib.js"></script>
+	<script type="text/javascript" src="sim.js"></script>
 	<script type="text/javascript" src="eventlog.js"></script>
 	<!--<script type="text/javascript" src="TinyQueue.js"></script>-->
 	<script src="https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-	<style>
-		input.number {
-			width: 100px;
-		}
-	</style>
+	<link rel="stylesheet" href="style.css">
 </head>
 <body>
 	<div>
@@ -29,10 +26,19 @@
 	<button onclick="RUN_SIM()">RUN</button>
 	<br>
 	<p id="dps">DPS: </p>
-	<span>Sample:&nbsp;</span><input type="text" id="namefilter" placeholder="Filter by name">
-	<button id="filter" onclick="FILTER()">FILTER</button>
-	<br>
-	<textarea id="log" style="width:500px; height:300px"></textarea>
+	<div style="display:flex;">
+		<div>
+			<span>Sample:&nbsp;</span><input type="text" id="namefilter" placeholder="Filter by name">
+			<button id="filter" onclick="FILTER()">FILTER</button>
+			<br>
+			<textarea id="log" style="width:500px; height:200px"></textarea>
+			<div id="details" style="width:500px"></div>
+		</div>
+		<div>
+			<p style="margin:0px">&nbsp;</p>
+			<div id="spellbreakdown" style="width:500px; margin:0px 0px 0px 5px"></div>
+		</div>
+	</div>
 	<script type="text/javascript">
 		let log;
 		$(function() {
@@ -57,15 +63,20 @@
 		function RUN_SIM() {
 			log.clear();
 			let me = new Player(Number($("#spellpower").val()), Number($("#atkpower").val()), Number($("#crit").val()), Number($("#haste").val()), Number($("#vers").val()), null, null,
-			 $("#class_str").val(), Number($("#gcd").val()), Number($("#maxResource").val()), $("#talent").val());
+			 $("#class_str").val(), $("#talent").val());
 			let dps = 0;
 			dps += new sim(me).run($("#timelim").val(), log);
 			for (let i = 0; i < 1000; i++) {
 				dps += new sim(me).run($('#timelim').val(), null);
 			}
 			$("#dps").html("DPS: " + (dps / 1001).toFixed(2));
-			// $("#dps").html("DPS: " + new sim(me).run($("#timelim").val(), log).toFixed(2));
 			$("#log").val(filterName(log.getEvents(), "").join("\n"));
+			$("#details").html(log.getDetails());
+			$("#spellbreakdown").html("");
+			$(".barcontent").on("mouseover", e => {
+				let spell = $("span", e.currentTarget)[0].textContent;
+				$("#spellbreakdown").html(log.getSpellDetails(spell));
+			});
 		}
 		function FILTER() {
 			$("#log").val(filterName(log.getEvents(), $("#namefilter").val().toUpperCase()).join("\n"));
