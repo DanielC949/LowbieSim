@@ -1,0 +1,25 @@
+input.number {
+	width:100px;
+}
+div.barcontain {
+  position:relative;
+}
+div.barcontent {
+  display:flex;
+  justify-content:space-between;
+  background-color:#eee;
+  margin:0px;
+}
+div.baroverlay {
+  position:absolute;
+  top:0px;
+  z-index:2;
+  background:#bbb;
+	height:100%;
+}
+div.barcontent span {
+  z-index:3;
+}
+div.detailsSpellBar {
+	margin:0px 0px 1em 0px;
+}
