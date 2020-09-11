@@ -61,24 +61,25 @@ function EventLog() {
 		return tablefyMeter(this.details);
 	}
 	this.getSpellDetails = (name) => {
-		let spell = this.details.find(e => e.name === name);
-		let head = `<div class="barcontain detailsSpellBar"><div class="barcontent">
+		const spell = this.details.find(e => e.name === name);
+    //Here be HTML
+		const head = `<div class="barcontain detailsSpellBar"><div class="barcontent">
 			<span>${spell.name}<br>Average: ${toReadableNum(spell.dmg / (spell.numCrit + spell.numNorm))}<br>Damage: ${toReadableNum(spell.dmg)}</span>
-			<span style="text-align:right">Casts: ${spell.numNorm + spell.numCrit}<br><br>DPS: ${toReadableNum(spell.dps)}<br></span></div>
+			<span style="text-align:right">Hits: ${spell.numNorm + spell.numCrit}<br><br>DPS: ${toReadableNum(spell.dps)}<br></span></div>
 			<div class="baroverlay" style="width:100%">&nbsp;</div></div>`;
-		let crits = `<div class="barcontain detailsSpellBar"><div class="barcontent">
+		const crits = `<div class="barcontain detailsSpellBar"><div class="barcontent">
 			<span>Critical Hits<br>Min: ${toReadableNum(spell.minCrit)}<br>Average: ${toReadableNum(spell.dmgCrit / spell.numCrit)}</span>
 			<span style="text-align:right">${spell.numCrit} [${((spell.numCrit / (spell.numCrit + spell.numNorm)) * 100).toFixed(1)}%]<br>Max: ${toReadableNum(spell.maxCrit)}<br>DPS: ${toReadableNum(spell.dmgCrit / this.time)}</span>
 			<div class="baroverlay" style="width:${Math.round((spell.dmgCrit / spell.dmg) * 100)}%">&nbsp;</div></div></div>`;
-		let norms = `<div class="barcontain detailsSpellBar"><div class="barcontent">
+		const norms = `<div class="barcontain detailsSpellBar"><div class="barcontent">
 			<span>Normal Hits<br>Min: ${toReadableNum(spell.minNorm)}<br>Average: ${toReadableNum(spell.dmgNorm / spell.numNorm)}</span>
 			<span style="text-align:right">${spell.numNorm} [${((spell.numNorm / (spell.numCrit + spell.numNorm)) * 100).toFixed(1)}%]<br>Max: ${toReadableNum(spell.maxNorm)}<br>DPS: ${toReadableNum(spell.dmgNorm / this.time)}</span>
 			<div class="baroverlay" style="width:${Math.round((spell.dmgNorm / spell.dmg) * 100)}%">&nbsp;</div></div></div>`;
-		return head + (spell.dmgCrit > spell.dmgNorm ? crits + norms : norms + crits);
+    return head + (e.dmgNorm !== 0 ? norms : "") + (e.dmgCrit !== 0 ? crits : "");
 	}
 }
-const filterName = (events, f) => events.filter(e => e.name.includes(f));
-const filterType = (events, f) => events.filter(e => e.type.includes(f));
+const filterName = (events, f) => events.filter(e => e.name.indexOf(f) > -1);
+const filterType = (events, f) => events.filter(e => e.type.indexOf(f) > -1);
 
 function LogEvent(time, type, name, dmg, isCrit) {
   this.time = time;
@@ -86,15 +87,8 @@ function LogEvent(time, type, name, dmg, isCrit) {
   this.name = name;
   this.dmg = dmg;
 	this.isCrit = isCrit;
-  this.toString = () => time + " (" + type + "): " + name + " => " + dmg.toFixed(2);
+  this.toString = () => time + " (" + type + ") " + name + " => " + dmg.toFixed(2);
 }
-/**
-	Use for EventLog
-	@param {String} name - name of event
-	@param {Number} dmg - dmg of event, 0 if non-damaging
-	@param {boolean} isCrit - is damage dealt a critical strike
-	@param {boolean} display - should this event be displayed
-*/
 function InternalEvent(name, dmg, isCrit, display) {
 	this.name = name;
 	this.dmg = dmg;
