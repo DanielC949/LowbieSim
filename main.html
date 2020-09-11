@@ -5,31 +5,51 @@
 	<script type="text/javascript" src="lib.js"></script>
 	<script type="text/javascript" src="sim.js"></script>
 	<script type="text/javascript" src="eventlog.js"></script>
-	<!--<script type="text/javascript" src="TinyQueue.js"></script>-->
 	<script src="https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<div>
-		<input class="number" type="number" id="spellpower" placeholder="spellpower">
-		<input class="number" type="number" id="atkpower" placeholder="atkpower">
-		<input class="number" type="number" id="crit" placeholder="crit">
-		<input class="number" type="number" id="haste" placeholder="haste">
-		<input class="number" type="number" id="vers" placeholder="vers">
-		<input type="text" id="class_str" placeholder="class_str">
-		<input class="number" type="number" id="gcd" placeholder="gcd">
-		<input class="number" type="number" id="maxResource" placeholder="maxResource">
-		<input type="text" id="talent" placeholder="talent">
-	</div>
-	<input type="text" id="timelim">
+	<table>
+		<tr>
+			<td>Spellpower</td>
+			<td><input class="number" type="number" id="spellpower" placeholder="spellpower"></td>
+		</tr>
+		<tr>
+      			<td>Attack Power:</td>
+      			<td><input class="number" type="number" id="atkpower" placeholder="atkpower"></td>
+    		</tr>
+		<tr>
+      			<td>Critical Strike:</td>
+      			<td><input class="number" type="number" id="crit" placeholder="crit"></td>
+    		</tr>
+		<tr>
+      			<td>Haste:</td>
+      			<td><input class="number" type="number" id="haste" placeholder="haste"></td>
+    		</tr>
+		<tr>
+      			<td>Versatility:</td>
+      			<td><input class="number" type="number" id="vers" placeholder="vers"></td>
+    		</tr>
+		<tr>
+      			<td>Class/Spec:</td>
+      			<td><input type="text" id="class_str" placeholder="class_str"></td>
+    		</tr>
+		<tr>
+      			<td>Talent:</td>
+      			<td><input type="text" id="talent" placeholder="talent"></td>
+    		</tr>
+	</table>
+	<br>
+	<div id="simsettings">
+	Time limit: <input class="number" type="number" id="timelim" value="60"> Iterations: <input class="number" type="number" id="iterations" value="10000">
 	<button onclick="RUN_SIM()">RUN</button>
+	</div>
 	<br>
 	<p id="dps">DPS: </p>
-	<div style="display:flex;">
+	<div style="display:flex;" id="sample">
 		<div>
 			<span>Sample:&nbsp;</span><input type="text" id="namefilter" placeholder="Filter by name">
-			<button id="filter" onclick="FILTER()">FILTER</button>
 			<br>
 			<textarea id="log" style="width:500px; height:200px"></textarea>
 			<div id="details" style="width:500px"></div>
@@ -40,36 +60,39 @@
 		</div>
 	</div>
 	<script type="text/javascript">
-		let log;
-		$(function() {
-			log = new EventLog();
+		let log = new EventLog();
+		$("#sample").hide();
+		//Filter log entries when "namefilter" input field changes
+		$('#namefilter').bind('input', e => {
+				FILTER();
 		});
-		$('#namefilter').on('keydown', e => {
-	    if (e.which == 13) {
-	        e.preventDefault();
-					FILTER();
-	    }
-		});
-		$('#timelim').on('keydown', e => {
+		//Adds "enter" keybind to run sims
+		$('#simsettings').on('keydown', e => {
 	    if (e.which == 13) {
 	        e.preventDefault();
 					RUN_SIM();
 	    }
 		});
-		const defaultInput = [185, 0, 0.1035, 0.1013, 0.1056, "DRUID$BALANCE", 1.5, 100, "NATURES_BALANCE"], fields = ["spellpower", "atkpower", "crit", "haste", "vers", "class_str", "gcd", "maxResource", "talent"];
+		//Sets default inputs for balance druid (based off Dalrodanor-Dalaran [US])
+		const defaultInput = [185, 0, 0.1035, 0.1013, 0.1056, "DRUID$BALANCE", "NATURES_BALANCE"], fields = ["spellpower", "atkpower", "crit", "haste", "vers", "class_str", "talent"];
 		for (let i = 0; i < defaultInput.length; i++) {
 			$("#" + fields[i]).val(defaultInput[i]);
 		}
 		function RUN_SIM() {
-			log.clear();
-			let me = new Player(Number($("#spellpower").val()), Number($("#atkpower").val()), Number($("#crit").val()), Number($("#haste").val()), Number($("#vers").val()), null, null,
-			 $("#class_str").val(), $("#talent").val());
-			let dps = 0;
-			dps += new sim(me).run($("#timelim").val(), log);
-			for (let i = 0; i < 1000; i++) {
-				dps += new sim(me).run($('#timelim').val(), null);
+			if (getNumVal("haste") >= 1.0) {
+				alert("Currently unable to handle haste values over 1.0 (100%)");
+				return;
 			}
-			$("#dps").html("DPS: " + (dps / 1001).toFixed(2));
+			$("#sample").show();
+			log.clear();
+			let me = new Player(getNumVal("spellpower"), getNumVal("atkpower"), getNumVal("crit"), getNumVal("haste"), getNumVal("vers"), null, null, $("#class_str").val(), $("#talent").val());
+			let dps = 0;
+			const inputIter = getNumVal("iterations"), iter = (inputIter === NaN || inputIter < 1 ? 1000 : inputIter) - 1;
+			dps += new Sim(me).run(getNumVal("timelim"), log);
+			for (let i = 0; i < iter; i++) {
+				dps += new Sim(me).run(getNumVal("timelim"), null);
+			}
+			$("#dps").html("DPS: " + (dps / (iter + 1)).toFixed(2));
 			$("#log").val(filterName(log.getEvents(), "").join("\n"));
 			$("#details").html(log.getDetails());
 			$("#spellbreakdown").html("");
@@ -80,6 +103,9 @@
 		}
 		function FILTER() {
 			$("#log").val(filterName(log.getEvents(), $("#namefilter").val().toUpperCase()).join("\n"));
+		}
+		function getNumVal(name) {
+			return Number($("#" + name).val());
 		}
 	</script>
 </body>
